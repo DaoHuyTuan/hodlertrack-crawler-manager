@@ -50,8 +50,11 @@ export function initWebSocketServer(httpServer: Server): void {
       try {
         const text = data.toString()
         const message = JSON.parse(text)
-        
-        console.log(`📨 Received message from crawler ${crawlerId}:`, message.type)
+
+        console.log(
+          `📨 Received message from crawler ${crawlerId}:`,
+          message.type
+        )
 
         // Handle welcome event
         if (message.type === 'welcome') {
