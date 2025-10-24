@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: hodler-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hodler
+      POSTGRES_PASSWORD: 123123
+      POSTGRES_DB: hodler
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - hodler-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hodler -d hodler']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # HodlerTrack Crawler Manager
+  hodler-crawler-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hodler-crawler-manager
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: hodler
+      DB_PASSWORD: 123123
+      DB_NAME: hodler
+      WEBSOCKET_URL: ws://localhost:3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hodler-network
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+    command: npm run dev
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  hodler-network:
+    driver: bridge
