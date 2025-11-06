@@ -10,7 +10,7 @@ COPY package.json yarn.lock ./
 # Install dependencies
 RUN yarn install --frozen-lockfile
 
-# Copy source code
+# Copy source code (includes drizzle.config.ts and drizzle/ folder)
 COPY . .
 
 # Expose port

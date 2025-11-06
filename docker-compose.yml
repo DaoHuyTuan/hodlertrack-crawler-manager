@@ -40,6 +40,7 @@ services:
       DB_PASSWORD: 123123
       DB_NAME: hodler
       WEBSOCKET_URL: ws://localhost:3000
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     ports:
       - '3000:3000'
     depends_on:
@@ -51,6 +52,7 @@ services:
       - ./src:/app/src
       - ./package.json:/app/package.json
       - ./tsconfig.json:/app/tsconfig.json
+      - /var/run/docker.sock:/var/run/docker.sock
     command: npm run dev
 
 volumes:
@@ -60,3 +62,5 @@ volumes:
 networks:
   hodler-network:
     driver: bridge
+    attachable: true
+    name: hodler-network
