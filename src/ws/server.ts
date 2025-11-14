@@ -1,6 +1,7 @@
 import { Server, IncomingMessage } from 'http'
 import { WebSocketServer, WebSocket } from 'ws'
 import { crawlerConnectionManager } from './crawlerConnectionManager'
+import { create_crawler_event, welcome_event } from '../events/crawler-events'
 
 let wss: WebSocketServer | null = null
 let serviceEventHandler:
@@ -47,79 +48,11 @@ export function initWebSocketServer(httpServer: Server): void {
     )
 
     socket.on('message', async (data: Buffer) => {
-      try {
-        const text = data.toString()
-        const message = JSON.parse(text)
+      handle_event(data)
+    })
 
-        console.log(
-          `📨 Received message from crawler ${crawlerId}:`,
-          message.type
-        )
-
-        // Handle welcome event
-        if (message.type === 'welcome') {
-          console.log(`🎉 Received welcome from crawler ${crawlerId}`)
-          const success = await crawlerConnectionManager.addConnection(
-            crawlerId,
-            socket
-          )
-
-          if (success) {
-            socket.send(
-              JSON.stringify({
-                type: 'welcome_ack',
-                message: 'Welcome acknowledged, crawler set online',
-                timestamp: new Date().toISOString(),
-                crawlerId
-              })
-            )
-          } else {
-            socket.send(
-              JSON.stringify({
-                type: 'error',
-                message: 'Failed to initialize crawler connection',
-                timestamp: new Date().toISOString(),
-                crawlerId
-              })
-            )
-            socket.close()
-            return
-          }
-        }
-        // Handle pong response
-        else if (message.type === 'pong') {
-          console.log(`📨 Received pong from crawler ${crawlerId}`)
-          await crawlerConnectionManager.handlePong(crawlerId)
-        }
-        // Handle other events
-        else {
-          // Invoke user handler if present
-          if (serviceEventHandler) {
-            await serviceEventHandler(message, socket, crawlerId)
-          }
-
-          // Broadcast to other clients
-          if (wss) {
-            const payload = JSON.stringify({
-              type: 'event',
-              data: message,
-              crawlerId
-            })
-            wss.clients.forEach(client => {
-              if (client !== socket && client.readyState === WebSocket.OPEN) {
-                client.send(payload)
-              }
-            })
-          }
-        }
-      } catch (error) {
-        socket.send(
-          JSON.stringify({
-            error: 'Invalid JSON message',
-            timestamp: new Date().toISOString()
-          })
-        )
-      }
+    socket.on('pong', async (data: Buffer) => {
+      console.log('hello pong', data)
     })
 
     socket.on('error', async (err: Error) => {
@@ -140,6 +73,25 @@ export function initWebSocketServer(httpServer: Server): void {
   })
 
   console.log('🚀 WebSocket server initialized on /ws/service-events')
+}
+
+export const handle_event = async (data: Buffer) => {
+  const parsed_data = JSON.parse(data.toString())
+  console.log('parsed_data', parsed_data)
+  switch (parsed_data.type) {
+    case 'welcome':
+      welcome_event()
+      break
+    case 'create_crawler':
+      create_crawler_event(parsed_data.data)
+      break
+    default:
+      return
+  }
+  try {
+  } catch (error) {
+    console.log('handle_event', error)
+  }
 }
 
 export function setServiceEventHandler(
