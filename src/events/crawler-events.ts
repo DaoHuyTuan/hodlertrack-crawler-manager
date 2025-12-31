@@ -14,9 +14,12 @@ interface Message {
 
 export const handle_crawler_events = (socket: Socket, message: Message) => {
   const { type, data } = message
-  console.log('type', typeof message)
+  console.log('message', message)
   switch (type) {
     case CRAWLER_EVENT_TYPE.CREATE:
+      break
+    case CRAWLER_EVENT_TYPE.TRANSACTIONS_DATA_NEW:
+      console.log('transactions data new', data)
       break
     default:
       console.log('Unknown message type:', type)
@@ -30,7 +33,7 @@ export const handle_crawler_events = (socket: Socket, message: Message) => {
 
 export const setup_crawler_event = (io: Server) => {
   const crawler_namespace = io.of('/ws/v1/crawler-events')
-  crawler_namespace.socketsJoin(SOCKET_ROOMS.CRAWLER)
+  // crawler_namespace.socketsJoin(SOCKET_ROOMS.CRAWLER)
   crawler_namespace.on('connection', (socket: Socket) => {
     handle_connection(socket)
     socket.on(CRAWLER_EVENTS.EVENTS, (data: Message) => {

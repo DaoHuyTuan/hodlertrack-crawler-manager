@@ -11,7 +11,8 @@ export const TOKEN_SYMBOL: string = 'token_symbol'
 // Socket.IO event names
 
 export const CRAWLER_EVENT_TYPE = {
-  CREATE: 'create-crawler'
+  CREATE: 'create-crawler',
+  TRANSACTIONS_DATA_NEW: 'transactions:data:new'
 }
 
 export const CRAWLER_EVENTS = {
